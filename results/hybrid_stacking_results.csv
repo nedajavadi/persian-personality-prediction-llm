@@ -1,0 +1,2 @@
+﻿model,accuracy,macro_f1,cv_macro_f1_mean,cv_macro_f1_std,use_llm_features,style_dim,bert_dim,llm_dim,total_dim
+Hybrid Stacking: Style + ParsBERT,0.75625,0.7544643568299482,0.8056201836719097,0.02372583445590754,False,24,768,0,792
