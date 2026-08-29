@@ -1,101 +1,122 @@
-# Hi, I'm Neda Javadi 👋
+# Persian Personality Prediction from Text
 
-### AI & NLP | LLMs | Persian Language Processing
+A hybrid deep learning system for predicting personality traits from Persian text, combining stylistic/lexical features with ParsBERT semantic embeddings. Developed as part of an M.Sc. thesis in Artificial Intelligence and Robotics.
 
-I'm a final-year **M.Sc. student in Artificial Intelligence and Robotics** with a background in Software Engineering.
-
-My main research interest is **Natural Language Processing**, particularly the use of **Large Language Models and Transformer-based models for Persian text**.
-
-My current work focuses on a practical problem in Persian NLP: **limited labeled data**. In my master's thesis, I designed a semi-supervised approach for personality prediction from Persian text by combining labeled and unlabeled data with **LLM-based pseudo-labeling** and **Transformer representations**.
+**Author:** Neda Javadi — [GitHub](https://github.com/nedajavadi) · [ORCID](https://orcid.org/0009-0005-3575-6777)
 
 ---
 
-## Research
+## Key contributions
 
-### Persian Personality Prediction with Semi-Supervised Learning
+- A **stacked hybrid architecture** (stylistic features + ParsBERT embeddings → RF/LR base learners → XGBoost meta-classifier) that **more than doubles** macro F1 over the best classical ML baseline on Persian personality prediction.
+- A systematic comparison of four classical baselines against Transformer-based semantic representations, with permutation-importance analysis showing exactly where the performance gain comes from.
+- A fully built (prompt-engineered, JSON-parsed) pipeline for LLM-based pseudo-labeling of unlabeled Persian text, laying the groundwork for a semi-supervised extension.
 
-**M.Sc. Thesis**
+## Headline result
 
-The project studies **Big Five (OCEAN) personality prediction from Persian text**.
+| Model | Accuracy | Macro F1 |
+|---|---|---|
+| Best classical baseline (XGBoost, stylistic features only) | 35.0% | 34.2% |
+| **Hybrid model — style features + ParsBERT, stacked ensemble** | **75.6%** | **75.4%** |
+| Hybrid model, 5-fold cross-validation (mean ± std) | — | 80.6% ± 2.4% |
 
-The main idea is to make better use of unlabeled Persian conversational data when manually labeled data is limited.
+Adding ParsBERT's contextual semantic representations to a stacked ensemble more than **doubles** macro F1 over the best classical baseline. Permutation importance confirms ParsBERT embedding dimensions drive nearly all of the model's predictive power — the hand-crafted stylistic features contribute comparatively little on their own.
 
-**Approach**
+![Baseline model comparison](results/baseline_comparison.png)
+![Hybrid model confusion matrix](results/final_hybrid_confusion_matrix.png)
 
-* Combine labeled personality data with an unlabeled Persian conversational corpus
-* Use an LLM to generate pseudo-labels for unlabeled data
-* Apply quality and consistency checks to the generated labels
-* Extract semantic representations using Persian Transformer models such as **ParsBERT**
-* Train and evaluate deep learning models
-* Compare the results with traditional machine learning baselines including **Logistic Regression, SVM, and Random Forest**
-* Evaluate performance using **Accuracy, Precision, Recall, and F1-score**
+## Problem
 
-**Main tools:** Python, PyTorch, TensorFlow/Keras, Hugging Face Transformers, Scikit-learn, Pandas, NumPy, Hazm
+Personality detection from text is well studied in English but remains limited in Persian, primarily due to the scarcity of labeled data and native pretrained language models. This project tackles the problem in three parts:
 
-→ **[View the project](https://github.com/nedajavadi/persian-personality-prediction-llm)**
+1. Build strong supervised baselines on a labeled Persian personality dataset.
+2. Show that Transformer-based semantic representations (ParsBERT) substantially outperform hand-crafted stylistic/lexical features for this task.
+3. Investigate whether a large language model can generate usable pseudo-labels on unlabeled Persian text, to extend the training set under a semi-supervised setup (**in progress — see "Status & roadmap"**).
 
----
+The target is a personality label with 6 classes, trained on 800 labeled Persian samples (roughly balanced, ~131–139 per class), with a held-out validation/test split.
 
-## Areas I Work With
+## Datasets
 
-**Natural Language Processing**
-Persian NLP · Text Classification · Transformer Models · Low-Resource NLP
+| Dataset | Role | Size |
+|---|---|---|
+| [Persian Personality Prediction v1800](https://www.kaggle.com/datasets/heidarpour/persian-personality-prediction-v1800) (Kaggle) | Labeled data — train / val / test | 800 / 200 / 800 |
+| [Kamtera Persian Conversational Dataset](https://huggingface.co/datasets/Kamtera/Persian-conversational-dataset) (Hugging Face) | Unlabeled pool, intended for LLM pseudo-labeling | 107,280 raw → 78,805 after cleaning |
 
-**Machine Learning**
-Supervised Learning · Semi-Supervised Learning · Model Evaluation
+## Method
 
-**LLMs**
-LLM APIs · Local LLMs · Hugging Face · Ollama · vLLM
+**Feature engineering** (`01_preprocessing.ipynb`, `02_feature_extraction.ipynb`)
+Persian-specific text normalization (Hazm), followed by 24 stylistic/lexical features: lexical diversity, sentence length, punctuation counts, sentiment-proxy word counts, first-person/social-word ratios, certainty/uncertainty markers, and more.
 
-**AI Engineering**
-RAG · Vector Databases · LlamaIndex · LangChain · LangGraph · FastAPI · Docker
+**Semantic representations** (`04_bert_embeddings.ipynb`)
+768-dimensional ParsBERT sentence embeddings via mean pooling over token representations.
 
-**Programming & Data**
-Python · SQL Server · Pandas · NumPy · Scikit-learn
+**Baselines** (`03_baseline_models.ipynb`)
+Logistic Regression, SVM (RBF), Random Forest, and XGBoost trained on stylistic features only, with stratified cross-validation and class-balanced weighting.
 
----
+**Hybrid stacking model** (`05_Hybrid_Model.ipynb`)
+Style features and ParsBERT embeddings feed a stacked ensemble (Random Forest and Logistic Regression base learners, XGBoost fusion) topped with a logistic meta-classifier. Evaluated with 5-fold cross-validation and permutation-based feature importance.
 
-## Education
+**LLM pseudo-labeling** (`03_5_llm_labeling_kamtera.ipynb`)
+A structured Persian prompt asks an LLM to score the Big Five dimensions (1–5) with a confidence score, returned as JSON, for unlabeled conversational text. See "Status & roadmap" for where this currently stands.
 
-**M.Sc. in Artificial Intelligence and Robotics**
-Islamic Azad University, Electronic Branch
-2024 – Present · GPA: **18.85 / 20**
+## Repository structure
 
-**B.Sc. in Software Engineering**
-University of Science and Culture
-2020 – 2022 · GPA: **18.36 / 20**
+```
+data/            raw and processed datasets
+notebooks/       01-07, run in order (see below)
+models/          trained model artifacts
+results/         metrics, classification reports, confusion matrices, plots
+```
 
----
+| # | Notebook | Purpose |
+|---|---|---|
+| 01 | `01_preprocessing.ipynb` | Clean/normalize text, extract basic style features, split data |
+| 02 | `02_feature_extraction.ipynb` | Extract the 24-dim stylistic feature set |
+| 03 | `03_baseline_models.ipynb` | Train and compare classical ML baselines |
+| 03.5 | `03_5_llm_labeling_kamtera.ipynb` | LLM pseudo-labeling pipeline for unlabeled data |
+| 04 | `04_bert_embeddings.ipynb` | Extract ParsBERT embeddings |
+| 05 | `05_Hybrid_Model.ipynb` | Train and evaluate the final hybrid stacking model |
+| 06 | `06_final_analysis.ipynb` | Consolidate and analyze results |
+| 07 | `07_inference_demo.ipynb` | Run the trained model on new text |
 
-## Beyond Research
+## Status & roadmap
 
-Alongside my academic work, I work as a **Senior Specialist in an enterprise software environment**, where I deal with software deployment, API testing, SQL Server reporting, issue tracking, and coordination with development teams.
+This project is under active development. Two parts of the intended design are not yet complete, documented here for full transparency:
 
-This experience has given me a practical perspective on how software systems are developed, tested, deployed, and maintained.
+**1. LLM pseudo-labeling has not yet been run against a real LLM.**
+The pipeline — prompt template, JSON parsing, confidence scoring — is fully built, but the actual API call is currently a placeholder. The file used during development contains randomly generated values for testing the code path, not real model annotations. As a direct result, the headline hybrid-model results above use style + ParsBERT features only; no LLM-derived features are included yet.
 
----
+**2. The Kamtera dataset needs re-evaluation for this task.**
+A review of its actual content shows it consists largely of short legal/administrative questions (e.g., insurance claims, inheritance disputes, contract issues) rather than personal, expressive conversational text — it's better suited to legal Q&A systems than personality inference. Before running LLM pseudo-labeling at scale, this project needs either a more suitable unlabeled Persian conversational corpus, or a validated case for why legal-domain text still carries usable personality signal.
 
-## Currently Exploring
+**Planned next steps:**
+- Identify or construct an unlabeled Persian corpus of genuinely personal/conversational text.
+- Run real LLM labeling on that corpus using the existing prompt template.
+- Retrain the hybrid model with LLM-derived pseudo-labels included, and directly compare against the current style+ParsBERT-only results to measure the true effect of semi-supervised augmentation.
 
-I'm currently expanding my work toward **LLM engineering**, with a focus on:
+## Requirements
 
-* Retrieval-Augmented Generation (RAG)
-* Vector databases
-* Local LLM serving
-* AI agents
-* Model deployment and MLOps
+```
+python>=3.10
+pandas
+numpy
+scikit-learn
+xgboost
+torch
+transformers
+hazm
+tqdm
+matplotlib
+seaborn
+joblib
+```
 
----
+## How to run
 
-## Research Interests
+1. Place raw data under `data/raw/`: `train.csv` and `test.csv` (Persian Personality Prediction v1800), `Kamtera.json` (Kamtera dataset).
+2. Run the notebooks in order, 01 → 07.
+3. Trained models and evaluation artifacts are written to `models/` and `results/`.
 
-`NLP` · `LLMs` · `Persian NLP` · `Low-Resource Learning`
-`Semi-Supervised Learning` · `Transformers` · `Computational Psychology`
+## License
 
----
-
-## Find Me
-
-**LinkedIn:** [linkedin.com/in/nedajavadi](https://linkedin.com/in/nedajavadi)
-**ORCID:** [0009-0005-3575-6777](https://orcid.org/0009-0005-3575-6777)
-**Email:** [nedajavaddi@gmail.com](mailto:nedajavaddi@gmail.com)
+See [LICENSE](LICENSE).
